@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مجرة الأسرار</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            background: #030712;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #spaceCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-header {
+            position: absolute;
+            top: 25px;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+        }
+        .ui-header h1 {
+            font-size: 26px;
+            color: #e2e8f0;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .ui-header p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .add-btn {
+            position: absolute;
+            bottom: 45px;
+            z-index: 10;
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            padding: 12px 28px;
+            font-size: 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .add-btn:hover {
+            background: #334155;
+            border-color: #475569;
+        }
+        .add-btn:disabled {
+            background: #0f172a;
+            color: #475569;
+            border-color: #1e293b;
+            cursor: not-allowed;
+        }
+
+        .footer-signature {
+            position: absolute;
+            bottom: 12px;
+            z-index: 10;
+            font-size: 12px;
+            color: #475569;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+        .modal-card h2 {
+            margin-bottom: 15px;
+            color: #f8fafc;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        .modal-card textarea {
+            width: 100%;
+            height: 110px;
+            background: #030712;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 12px;
+            color: #f8fafc;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        .modal-card textarea:focus {
+            border-color: #475569;
+        }
+        .modal-card p.message-content {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 25px;
+            word-break: break-word;
+            background: #030712;
+            padding: 18px;
+            border-radius: 10px;
+            border-right: 2px solid #334155;
+            text-align: right;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn-primary {
+            background: #f8fafc;
+            color: #030712;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: #cbd5e1; }
+        .btn-secondary {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #1e293b;
+            padding: 10px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .btn-secondary:hover { color: #f8fafc; border-color: #475569; }
+
+        .hint-tooltip {
+            position: absolute;
+            bottom: 95px;
+            z-index: 10;
+            font-size: 12px;
+            color: #475569;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-header">
+        <h1>مجرة الأسرار</h1>
+        <p>كل نقطة ضوء تمثل رسالة مخفية من شخص مجهول</p>
+    </div>
+
+    <canvas id="spaceCanvas"></canvas>
+
+    <button class="add-btn" id="openModalBtn" onclick="openWriteModal()">اكتب رسالتك</button>
+    <div class="hint-tooltip">اضغط على أي نجمة لقراءة محتواها</div>
+    <div class="footer-signature">تم صنع الموقع بواسطة أحمد</div>
+
+    <div class="modal-overlay" id="writeModal">
+        <div class="modal-card">
+            <h2>اترك رسالتك في الفضاء</h2>
+            <textarea id="messageInput" placeholder="اكتب رسالتك هنا... (رسالة واحدة فقط)"></textarea>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="submitMessage()">إرسال</button>
+                <button class="btn-secondary" onclick="closeModals()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="readModal">
+        <div class="modal-card">
+            <h2>رسالة من مجهول</h2>
+            <p class="message-content" id="displayMessage">محتوى الرسالة...</p>
+            <button class="btn-primary" onclick="closeModals()">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spaceCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let stars = [];
+        let animations = []; // مصفوفة لتأثيرات حركة التحول والنشر
+
+        let savedMessages = JSON.parse(localStorage.getItem('galaxy_messages')) || [
+            { text: "أتمنى أن يجد هذا العالم السلام الذي يبحث عنه يوما ما.", x: width * 0.3, y: height * 0.3, size: 3.5, pulse: Math.random() },
+            { text: "كنت هنا وتركت هذا الأثر كبصمة عابرة.", x: width * 0.7, y: height * 0.4, size: 4, pulse: Math.random() },
+            { text: "لا تقلق بشأن الغد فكل شيء سيترتب في مكانه الصحيح.", x: width * 0.5, y: height * 0.6, size: 3, pulse: Math.random() },
+            { text: "رسالة لكل عابر: أنت تقاوم بقوة وتستحق الأفضل.", x: width * 0.2, y: height * 0.7, size: 4, pulse: Math.random() }
+        ];
+
+        stars = savedMessages;
+
+        let backgroundStars = [];
+        for (let i = 0; i < 180; i++) {
+            backgroundStars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 1.2,
+                alpha: Math.random()
+            });
+        }
+
+        const hasUserPosted = localStorage.getItem('user_has_posted');
+        if (hasUserPosted) {
+            document.getElementById('openModalBtn').innerText = "تم إرسال رسالتك بالفعل";
+            document.getElementById('openModalBtn').disabled = true;
+        }
+
+        function openWriteModal() {
+            if (hasUserPosted) return;
+            document.getElementById('writeModal').classList.add('active');
+        }
+
+        function closeModals() {
+            document.getElementById('writeModal').classList.remove('active');
+            document.getElementById('readModal').classList.remove('active');
+        }
+
+        function submitMessage() {
+            const text = document.getElementById('messageInput').value.trim();
+            if (!text) {
+                return;
+            }
+
+            closeModals();
+
+            // إحداثيات هدف النجمة الجديدة في الفضاء
+            const targetX = Math.random() * (width - 150) + 75;
+            const targetY = Math.random() * (height - 150) + 75;
+
+            // بدء تأثير الحركة السينمائي (شعلة ضوئية تنطلق من أسفل الشاشة وتستقر في المكان المحدد)
+            animations.push({
+                x: width / 2,
+                y: height - 60,
+                targetX: targetX,
+                targetY: targetY,
+                progress: 0,
+                text: text,
+                speed: 0.025 + Math.random() * 0.01
+            });
+
+            localStorage.setItem('user_has_posted', 'true');
+            document.getElementById('messageInput').value = '';
+            document.getElementById('openModalBtn').innerText = "تم إرسال رسالتك بالفعل";
+            document.getElementById('openModalBtn').disabled = true;
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            for (let star of stars) {
+                const dist = Math.hypot(star.x - mouseX, star.y - mouseY);
+                if (dist < 22) {
+                    document.getElementById('displayMessage').innerText = star.text;
+                    document.getElementById('readModal').classList.add('active');
+                    break;
+                }
+            }
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. رسم نجوم الخلفية
+            ctx.fillStyle = '#ffffff';
+            backgroundStars.forEach(star => {
+                ctx.globalAlpha = star.alpha * 0.4;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. رسم النجوم الثابتة
+            stars.forEach(star => {
+                star.pulse += 0.025;
+                let currentSize = star.size + Math.sin(star.pulse) * 1.2;
+                
+                ctx.globalAlpha = 1;
+                let gradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, currentSize * 3.5);
+                gradient.addColorStop(0, 'rgba(248, 250, 252, 0.85)');
+                gradient.addColorStop(1, 'rgba(248, 250, 252, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, currentSize * 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, currentSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 3. معالجة ورسم تأثيرات الحركة (الشهاب الضوئي الذي يتحول لنجمة)
+            for (let i = animations.length - 1; i >= 0; i--) {
+                let anim = animations[i];
+                anim.progress += anim.speed;
+
+                // معادلة حركة منحنية سلسة (Bezier-like interpolation)
+                let currentX = anim.x + (anim.targetX - anim.x) * anim.progress;
+                let currentY = anim.y + (anim.targetY - anim.y) * anim.progress - Math.sin(anim.progress * Math.PI) * 120;
+
+                // رسم ذيل الضوء المتحرك
+                ctx.globalAlpha = 1 - anim.progress;
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // توهج حول الشعاب المتحرك
+                let trailGrad = ctx.createRadialGradient(currentX, currentY, 0, currentX, currentY, 15);
+                trailGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                trailGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = trailGrad;
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // إذا انتهت الحركة، يتم تثبيت النجمة نهائياً في قاعدة البيانات
+                if (anim.progress >= 1) {
+                    stars.push({
+                        text: anim.text,
+                        x: anim.targetX,
+                        y: anim.targetY,
+                        size: 4,
+                        pulse: Math.random()
+                    });
+                    localStorage.setItem('galaxy_messages', JSON.stringify(stars));
+                    animations.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
